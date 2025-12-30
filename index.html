@@ -1,104 +1,243 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>KING TRADER OFFICIAL v2</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KING TRADER OFFICIAL | NEURAL CORE API</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --king-blue: #0052ff;
+            --buy-green: #00c853;
+            --sell-red: #ff1744;
+            --wa-green: #25D366;
+            --text-dark: #1a1a1a;
+        }
 
-<style>
-body{margin:0;font-family:Inter;background:#fff}
-header{text-align:center;padding:30px;border-bottom:1px solid #eee}
-h1{font-family:Montserrat;margin:0}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;padding:30px}
-.card{border:3px solid #0052ff;border-radius:18px;padding:20px;text-align:center}
-.buy{border-color:#00c853}
-.sell{border-color:#ff1744}
-.signal{font-size:22px;font-weight:900;margin:15px 0}
-.btn{padding:12px;width:100%;border-radius:10px;border:2px solid #0052ff;
-background:none;font-weight:800;cursor:pointer}
-.btn:hover{background:#0052ff;color:#fff}
-</style>
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: 'Inter', sans-serif; color: var(--text-dark); background-color: #ffffff; overflow-x: hidden; }
+
+        /* --- LICENSE SCREEN --- */
+        #license-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #ffffff; z-index: 10000;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .login-card {
+            text-align: center; padding: 50px 40px; border: 4px solid var(--king-blue);
+            border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            width: 95%; max-width: 420px; background: white;
+        }
+        .login-card h2 { font-family: 'Montserrat', sans-serif; font-weight: 900; margin-bottom: 10px; }
+        .login-card input {
+            width: 100%; padding: 15px; margin: 20px 0; border: 2px solid #eee;
+            border-radius: 12px; font-size: 1rem; text-align: center; outline: none;
+        }
+        .login-card button {
+            background: transparent; color: var(--king-blue); border: 2px solid var(--king-blue);
+            padding: 15px; width: 100%; border-radius: 12px; font-weight: 800; cursor: pointer; transition: 0.3s;
+        }
+        .login-card button:hover { background: var(--king-blue); color: white; }
+
+        /* --- HEADER --- */
+        #main-app { display: none; }
+        header { text-align: center; padding: 30px 20px; border-bottom: 1px solid #eee; background: #fff; }
+        header h1 { font-family: 'Montserrat', sans-serif; font-size: 2.2rem; margin: 0; color: #000; }
+        .header-trust { color: var(--king-blue); font-weight: 800; text-transform: uppercase; font-size: 0.85rem; margin-top: 8px; letter-spacing: 2px; }
+
+        /* --- GRID --- */
+        .container { max-width: 1500px; margin: 40px auto; padding: 0 20px 150px; }
+        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+
+        .card {
+            background: #ffffff;
+            border: 3px solid var(--king-blue);
+            border-top-width: 10px; border-bottom-width: 10px;
+            border-radius: 20px;
+            padding: 25px 15px; text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            transition: 0.4s ease;
+        }
+        .card.buy-state { border-color: var(--buy-green); box-shadow: 0 10px 25px rgba(0, 200, 83, 0.2); }
+        .card.sell-state { border-color: var(--sell-red); box-shadow: 0 10px 25px rgba(255, 23, 68, 0.2); }
+
+        .pair-label { font-family: 'Montserrat', sans-serif; font-size: 1.4rem; font-weight: 900; }
+        .node-id { font-size: 0.7rem; color: #666; font-weight: 800; display: block; margin-bottom: 15px; }
+
+        .gauge-box { height: 210px; margin: 10px 0; border-radius: 12px; overflow: hidden; border: 1px solid #eee; }
+
+        .btn-neural {
+            background: transparent; color: var(--king-blue); border: 2px solid var(--king-blue);
+            width: 100%; padding: 12px; border-radius: 10px; font-weight: 800;
+            font-size: 0.9rem; cursor: pointer; transition: 0.3s;
+        }
+        .btn-neural:hover:not(:disabled) { background: var(--king-blue); color: #fff; }
+        .btn-neural:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .signal-box { margin-top: 12px; font-family: 'Montserrat', sans-serif; font-size: 1.4rem; font-weight: 900; display: none; text-transform: uppercase; }
+        .buy-res { color: var(--buy-green); }
+        .sell-res { color: var(--sell-red); }
+
+        /* --- WHATSAPP --- */
+        .wa-float { position: fixed; bottom: 30px; right: 30px; z-index: 1000; text-align: center; }
+        .wa-btn { background: var(--wa-green); width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 20px rgba(0,0,0,0.1); text-decoration: none; margin: 0 auto; }
+        .wa-btn i { color: white; font-size: 32px; }
+        .wa-label { background: #fff; color: #000; font-size: 9px; font-weight: 900; padding: 6px 12px; border-radius: 8px; border: 2px solid var(--wa-green); display: block; margin-top: 10px; max-width: 170px; line-height: 1.3; }
+
+        @media (max-width: 1100px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
+    </style>
 </head>
-
 <body>
 
-<header>
-<h1>KING TRADER OFFICIAL</h1>
-<p>1–2 MINUTE FAST ENGINE</p>
-</header>
+<!-- License Screen -->
+<div id="license-screen">
+    <div class="login-card">
+        <h2>KING TRADER</h2>
+        <p style="font-size: 11px; color: #777; font-weight: 800; margin-top: 5px;">INSTITUTIONAL CORE ENGINE v15.1</p>
+        
+        <!-- Sirf License Key Enter Karni Hogi -->
+        <input type="password" id="license-input" placeholder="License Code: pksignalsking900">
+        
+        <button onclick="unlock()">ACTIVATE TERMINAL</button>
+        
+        <div style="margin-top:20px; border-top:1px solid #eee; padding-top:15px;">
+            <p style="font-size:12px; font-weight:800;">Contact for License Code:</p>
+            <a href="https://wa.me/923064391353" style="color:var(--wa-green); text-decoration:none; font-weight:900;">
+                <i class="fab fa-whatsapp"></i> +92 306 4391353
+            </a>
+        </div>
+    </div>
+</div>
 
-<div class="grid" id="grid"></div>
+<!-- Main App UI -->
+<div id="main-app">
+    <header>
+        <h1>KING TRADER OFFICIAL</h1>
+        <p class="header-trust">NEURAL CORE ENGINE | LIVE: <span id="clock">00:00:00</span></p>
+    </header>
+    <div class="container"><div class="grid" id="pairs-grid"></div></div>
+</div>
+
+<div class="wa-float">
+    <a href="https://wa.me/923064391353" target="_blank" class="wa-btn"><i class="fab fa-whatsapp"></i></a>
+    <span class="wa-label">FOR LIVE CALL TRADING AND LEARN TRADING</span>
+</div>
 
 <script>
-const pairs = [
- {name:"BTC/USDT", sym:"BTCUSDT"},
- {name:"ETH/USDT", sym:"ETHUSDT"},
- {name:"BNB/USDT", sym:"BNBUSDT"},
- {name:"XRP/USDT", sym:"XRPUSDT"},
- {name:"SOL/USDT", sym:"SOLUSDT"}
-];
+    // ==========================================
+    // 1. APNI TWELVEDATA KEY YAHAN PASTE KAREIN
+    // ==========================================
+    let TWELVE_DATA_KEY = "APNI_KEY_YAHAN_LIGAYEIN"; 
 
-// RSI CALC
-function rsi(values, period = 14) {
- let gains = 0, losses = 0;
- for (let i = 1; i <= period; i++) {
-   const diff = values[i] - values[i - 1];
-   if (diff >= 0) gains += diff;
-   else losses -= diff;
- }
- if (losses === 0) return 100;
- const rs = gains / losses;
- return 100 - (100 / (1 + rs));
-}
+    // ==========================================
+    
+    const LICENSE_B64 = "cGtzaWduYWxza2luZzkwMA=="; // pksignalsking900
 
-async function getSignal(index, sym) {
- const card = document.getElementById("card"+index);
- const out = document.getElementById("out"+index);
+    const pairs = [
+        { name: "EUR/USD", sym: "EUR/USD", node: "FX-7721", cat: "forex" },
+        { name: "GBP/USD", sym: "GBP/USD", node: "FX-8842", cat: "forex" },
+        { name: "USD/JPY", sym: "USD/JPY", node: "FX-3310", cat: "forex" },
+        { name: "AUD/USD", sym: "AUD/USD", node: "FX-5591", cat: "forex" },
+        { name: "USD/CAD", sym: "USD/CAD", node: "FX-1029", cat: "forex" },
+        { name: "USD/CHF", sym: "USD/CHF", node: "FX-4482", cat: "forex" },
+        { name: "NZD/USD", sym: "NZD/USD", node: "FX-6673", cat: "forex" },
+        { name: "EUR/GBP", sym: "EUR/GBP", node: "FX-9921", cat: "forex" },
+        { name: "EUR/JPY", sym: "EUR/JPY", node: "FX-2204", cat: "forex" },
+        { name: "GBP/JPY", sym: "GBP/JPY", node: "FX-1150", cat: "forex" },
+        { name: "BTC/USDT", sym: "BTCUSDT", node: "CRY-X01", cat: "crypto" },
+        { name: "ETH/USDT", sym: "ETHUSDT", node: "CRY-X02", cat: "crypto" },
+        { name: "LTC/USDT", sym: "LTCUSDT", node: "CRY-X03", cat: "crypto" },
+        { name: "SOL/USDT", sym: "SOLUSDT", node: "CRY-X04", cat: "crypto" },
+        { name: "XRP/USDT", sym: "XRPUSDT", node: "CRY-X05", cat: "crypto" },
+        { name: "BNB/USDT", sym: "BNBUSDT", node: "CRY-X06", cat: "crypto" }
+    ];
 
- out.innerText = "SCANNING...";
- card.className = "card";
+    function updateClock() {
+        document.getElementById('clock').innerText = new Date().toLocaleTimeString('en-GB', { hour12: false });
+    }
+    setInterval(updateClock, 1000);
 
- const res = await fetch(
-  `https://api.binance.com/api/v3/klines?symbol=${sym}&interval=1m&limit=20`
- );
- const data = await res.json();
+    function unlock() {
+        const pass = document.getElementById('license-input').value;
+        if(btoa(pass) === LICENSE_B64) {
+            if(TWELVE_DATA_KEY === "f38acaea40bd4ac7b93ee0ffd88fcd1f" || TWELVE_DATA_KEY === "") {
+                alert("Bhai, code ke andar TwelveData API key lagana bhool gaye aap!");
+                return;
+            }
+            document.getElementById('license-screen').style.display = 'none';
+            document.getElementById('main-app').style.display = 'block';
+            init();
+        } else { alert("Error: License Invalid!"); }
+    }
 
- const closes = data.map(c => parseFloat(c[4]));
- const rsiVal = rsi(closes);
+    function init() {
+        const grid = document.getElementById('pairs-grid');
+        pairs.forEach((p, i) => {
+            const card = document.createElement('div');
+            card.className = 'card'; card.id = `card-${i}`;
+            card.innerHTML = `
+                <span class="pair-label">${p.name}</span>
+                <span class="node-id">${p.node}</span>
+                <div class="gauge-box" id="tv-${i}"></div>
+                <div class="signal-box" id="out-${i}"></div>
+                <button class="btn-neural" id="btn-${i}" onclick="getSignal(${i}, '${p.sym}', '${p.cat}')">GET SIGNAL</button>
+            `;
+            grid.appendChild(card);
+            const script = document.createElement('script');
+            script.type = 'text/javascript'; script.async = true;
+            script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-technical-analysis.js';
+            script.innerHTML = JSON.stringify({
+                "interval": "1m", "width": "100%", "isTransparent": true, "height": "100%",
+                "symbol": p.cat === "crypto" ? "BINANCE:"+p.sym : "FX_IDC:"+p.sym.replace("/",""),
+                "showIntervalTabs": false, "locale": "en", "colorTheme": "light"
+            });
+            document.getElementById(`tv-${i}`).appendChild(script);
+        });
+    }
 
- const last3 = closes.slice(-3);
- const bullish = last3[2] > last3[1] && last3[1] > last3[0];
- const bearish = last3[2] < last3[1] && last3[1] < last3[0];
+    async function getSignal(idx, sym, cat) {
+        const btn = document.getElementById(`btn-${idx}`);
+        const out = document.getElementById(`out-${idx}`);
+        const card = document.getElementById(`card-${idx}`);
+        btn.disabled = true; btn.innerText = "SCANNING MARKET..."; out.style.display = "none";
+        card.className = 'card';
 
- let signal = "";
+        try {
+            let signal = "";
+            if (cat === "crypto") {
+                const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${sym}&interval=1m&limit=10`);
+                const data = await res.json();
+                const current = parseFloat(data[9][4]);
+                const sma = data.reduce((s, c) => s + parseFloat(c[4]), 0) / 10;
+                signal = current > sma ? "1M CALL ↑" : "1M PUT ↓";
+            } else {
+                const res = await fetch(`https://api.twelvedata.com/time_series?symbol=${sym}&interval=1min&outputsize=10&apikey=${TWELVE_DATA_KEY}`);
+                const data = await res.json();
+                if(data.status === "error") throw new Error(data.message);
+                const prices = data.values.map(v => parseFloat(v.close));
+                const current = prices[0];
+                const sma = prices.reduce((a, b) => a + b, 0) / 10;
+                signal = current > sma ? "1M CALL ↑" : "1M PUT ↓";
+            }
 
- if (rsiVal > 55 && bullish) {
-   signal = "CALL ↑ (1–2M)";
-   card.classList.add("buy");
- } else {
-   signal = "PUT ↓ (1–2M)";
-   card.classList.add("sell");
- }
-
- out.innerText = signal;
-}
-
-// UI BUILD
-const grid = document.getElementById("grid");
-pairs.forEach((p,i)=>{
- grid.innerHTML += `
-  <div class="card" id="card${i}">
-   <h2>${p.name}</h2>
-   <div class="signal" id="out${i}">—</div>
-   <button class="btn" onclick="getSignal(${i},'${p.sym}')">
-     GET SIGNAL
-   </button>
-  </div>
- `;
-});
+            setTimeout(() => {
+                out.innerText = signal; out.style.display = "block";
+                if(signal.includes("CALL")) {
+                    out.className = "signal-box buy-res"; card.classList.add('buy-state');
+                } else {
+                    out.className = "signal-box sell-res"; card.classList.add('sell-state');
+                }
+                btn.disabled = false; btn.innerText = "GET SIGNAL";
+            }, 3500);
+        } catch (e) {
+            alert("TwelveData API Error: " + e.message);
+            btn.disabled = false; btn.innerText = "GET SIGNAL";
+        }
+    }
 </script>
-
 </body>
 </html>
