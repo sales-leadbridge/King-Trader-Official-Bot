@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>KING TRADER OFFICIAL v2</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+body{margin:0;font-family:Inter;background:#fff}
+header{text-align:center;padding:30px;border-bottom:1px solid #eee}
+h1{font-family:Montserrat;margin:0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;padding:30px}
+.card{border:3px solid #0052ff;border-radius:18px;padding:20px;text-align:center}
+.buy{border-color:#00c853}
+.sell{border-color:#ff1744}
+.signal{font-size:22px;font-weight:900;margin:15px 0}
+.btn{padding:12px;width:100%;border-radius:10px;border:2px solid #0052ff;
+background:none;font-weight:800;cursor:pointer}
+.btn:hover{background:#0052ff;color:#fff}
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>KING TRADER OFFICIAL</h1>
+<p>1–2 MINUTE FAST ENGINE</p>
+</header>
+
+<div class="grid" id="grid"></div>
+
+<script>
+const pairs = [
+ {name:"BTC/USDT", sym:"BTCUSDT"},
+ {name:"ETH/USDT", sym:"ETHUSDT"},
+ {name:"BNB/USDT", sym:"BNBUSDT"},
+ {name:"XRP/USDT", sym:"XRPUSDT"},
+ {name:"SOL/USDT", sym:"SOLUSDT"}
+];
+
+// RSI CALC
+function rsi(values, period = 14) {
+ let gains = 0, losses = 0;
+ for (let i = 1; i <= period; i++) {
+   const diff = values[i] - values[i - 1];
+   if (diff >= 0) gains += diff;
+   else losses -= diff;
+ }
+ if (losses === 0) return 100;
+ const rs = gains / losses;
+ return 100 - (100 / (1 + rs));
+}
+
+async function getSignal(index, sym) {
+ const card = document.getElementById("card"+index);
+ const out = document.getElementById("out"+index);
+
+ out.innerText = "SCANNING...";
+ card.className = "card";
+
+ const res = await fetch(
+  `https://api.binance.com/api/v3/klines?symbol=${sym}&interval=1m&limit=20`
+ );
+ const data = await res.json();
+
+ const closes = data.map(c => parseFloat(c[4]));
+ const rsiVal = rsi(closes);
+
+ const last3 = closes.slice(-3);
+ const bullish = last3[2] > last3[1] && last3[1] > last3[0];
+ const bearish = last3[2] < last3[1] && last3[1] < last3[0];
+
+ let signal = "";
+
+ if (rsiVal > 55 && bullish) {
+   signal = "CALL ↑ (1–2M)";
+   card.classList.add("buy");
+ } else {
+   signal = "PUT ↓ (1–2M)";
+   card.classList.add("sell");
+ }
+
+ out.innerText = signal;
+}
+
+// UI BUILD
+const grid = document.getElementById("grid");
+pairs.forEach((p,i)=>{
+ grid.innerHTML += `
+  <div class="card" id="card${i}">
+   <h2>${p.name}</h2>
+   <div class="signal" id="out${i}">—</div>
+   <button class="btn" onclick="getSignal(${i},'${p.sym}')">
+     GET SIGNAL
+   </button>
+  </div>
+ `;
+});
+</script>
+
+</body>
+</html>
